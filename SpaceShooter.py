@@ -4,45 +4,49 @@ from adafruit_display_text import label
 import math
 import random
 
-shot_timeout = 0.3
+// Static variables
 frame_sleep = 0.02
-enemy_timeout = 4.0
 max_shots = 3
-game_over = False;
+shot_timeout = 0.3
+enemy_spawn_multiplier = 0.9
+enemy_spawn_minimum_time = 1.0;
 
-shots = []
-time_since_shot = shot_timeout
-enemies = []
-time_since_enemy = enemy_timeout
+// Dynamic variables
 score = 0
 lives = 3
+enemy_timeout = 4.0
+game_over = False;
+shots = []
+enemies = []
+time_since_shot = shot_timeout
+time_since_enemy = enemy_timeout
 
-about = displayio.Group()
-about_group = displayio.Group(scale=1, x=int(display.width*0.5), y=display.height - 20)
-about_area = label.Label(terminalio.FONT, text="A", color=0xFFFFFF)
-about_group.append(about_area)
-about.append(about_group)
+player = displayio.Group()
+player_group = displayio.Group(scale=1, x=int(display.width*0.5), y=display.height - 20)
+player_area = label.Label(terminalio.FONT, text="A", color=0xFFFFFF)
+player_group.append(player_area)
+player.append(player_group)
 
 score_group = displayio.Group(scale=1, x=0, y=5)
 score_area = label.Label(terminalio.FONT, text="{:08d}".format(score), color=0xFFFFFF)
 score_group.append(score_area)
-about.append(score_group)
+player.append(score_group)
 
 lives_group = displayio.Group(scale=1, x=display.width, y=5)
 lives_area = label.Label(terminalio.FONT, text="AAA", color=0xFFFFFF, label_direction="RTL")
 lives_group.append(lives_area)
-about.append(lives_group)
+player.append(lives_group)
 
-display.show(about)
+display.show(player)
 
 def UpdateScore(label):
     label.text = "{:08d}".format(score)
 
 def Shoot():
-    shot_group = displayio.Group(scale=1, x=about_group.x, y=about_group.y - 3)
+    shot_group = displayio.Group(scale=1, x=player_group.x, y=player_group.y - 3)
     shot_area = label.Label(terminalio.FONT, text="*", color=0xFFFFFF)
     shot_group.append(shot_area)
-    about.append(shot_group)
+    player.append(shot_group)
     shots.append(shot_group)
 
 def MoveShots():
@@ -69,33 +73,33 @@ def DistanceBetweenGroups(a, b):
     return math.sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2))
 
 def RemoveShot(shot):
-    about.remove(shot)
+    player.remove(shot)
     shots.remove(shot)
 
 def SpawnEnemy():
     enemy_group = displayio.Group(scale=1, x=random.randint(10, display.width-10), y=0)
     enemy_area = label.Label(terminalio.FONT, text="X", color=0xFFFFFF)
     enemy_group.append(enemy_area)
-    about.append(enemy_group)
+    player.append(enemy_group)
     enemies.append(enemy_group)
 
 def RemoveEnemy(enemy):
-    about.remove(enemy)
+    player.remove(enemy)
     enemies.remove(enemy)
 
 while(not game_over):
     time_since_shot = time_since_shot + frame_sleep
     time_since_enemy = time_since_enemy + frame_sleep
     direction = 0
-    if BTN_X.value == False and about_group.x > 5:
+    if BTN_X.value == False and player_group.x > 5:
         direction = -1
-    if BTN_Y.value == False and about_group.x < display.width - 5:
+    if BTN_Y.value == False and player_group.x < display.width - 5:
         direction = 1
     if BTN_B.value == False:
         if(time_since_shot >= shot_timeout and len(shots) < max_shots):
             Shoot()
             time_since_shot = 0
-    about_group.x = about_group.x + direction
+    player_group.x = player_group.x + direction
     MoveShots()
     if(MoveEnemies()):
         lives = lives - 1
@@ -107,13 +111,13 @@ while(not game_over):
             gameover_group = displayio.Group(scale=1, x=int(display.width * 0.5), y=int(display.height * 0.5))
             gameover_area = label.Label(terminalio.FONT, text="GAME OVER", color=0xFFFFFF)
             gameover_group.append(gameover_area)
-            about.append(gameover_group)
-            about.remove(about_group)
+            player.append(gameover_group)
+            player.remove(player_group)
     if(time_since_enemy >= enemy_timeout):
-        SpawnEnemy()
         time_since_enemy = 0
-        if(enemy_timeout > 0.8):
-            enemy_timeout = enemy_timeout * 0.9
+        SpawnEnemy()
+        if(enemy_timeout > enemy_spawn_minimum_time):
+            enemy_timeout = enemy_timeout * enemy_spawn_multiplier
     time.sleep(frame_sleep)
     score = score + 10
 
