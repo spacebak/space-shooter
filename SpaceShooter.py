@@ -4,14 +4,14 @@ from adafruit_display_text import label
 import math
 import random
 
-// Static variables
+# Static variables
 frame_sleep = 0.02
 max_shots = 3
 shot_timeout = 0.3
 enemy_spawn_multiplier = 0.9
 enemy_spawn_minimum_time = 1.0;
 
-// Dynamic variables
+# Dynamic variables
 score = 0
 lives = 3
 enemy_timeout = 4.0
@@ -21,6 +21,7 @@ enemies = []
 time_since_shot = shot_timeout
 time_since_enemy = enemy_timeout
 
+# Game elements setup
 player = displayio.Group()
 player_group = displayio.Group(scale=1, x=int(display.width*0.5), y=display.height - 20)
 player_area = label.Label(terminalio.FONT, text="A", color=0xFFFFFF)
@@ -64,6 +65,7 @@ def MoveEnemies():
                 RemoveEnemy(enemy)
         for shot in shots:
             if(DistanceBetweenGroups(enemy, shot) < 5):
+                score = score + 1000 - enemy.y * 10 
                 RemoveEnemy(enemy)
                 RemoveShot(shot)
                 UpdateScore(score_area)
@@ -87,6 +89,7 @@ def RemoveEnemy(enemy):
     player.remove(enemy)
     enemies.remove(enemy)
 
+# Gameloop
 while(not game_over):
     time_since_shot = time_since_shot + frame_sleep
     time_since_enemy = time_since_enemy + frame_sleep
@@ -101,6 +104,8 @@ while(not game_over):
             time_since_shot = 0
     player_group.x = player_group.x + direction
     MoveShots()
+
+    # Test if enemy crosses bottom line
     if(MoveEnemies()):
         lives = lives - 1
         lives_string = ""
@@ -113,12 +118,14 @@ while(not game_over):
             gameover_group.append(gameover_area)
             player.append(gameover_group)
             player.remove(player_group)
+            game_over = True
+
+    # Test if we should spawn a new enemy
     if(time_since_enemy >= enemy_timeout):
         time_since_enemy = 0
         SpawnEnemy()
         if(enemy_timeout > enemy_spawn_minimum_time):
             enemy_timeout = enemy_timeout * enemy_spawn_multiplier
     time.sleep(frame_sleep)
-    score = score + 10
 
 time.sleep(2)
